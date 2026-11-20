@@ -105,6 +105,7 @@
       em('M3 S' + (opt.wireS != null ? opt.wireS : (+opt.wireHeat).toFixed(0)) + ' ; Drahtheizung EIN');
     }
     if (opt.header) opt.header.split('\n').forEach(l => em(l));
+    if (proj.leIgnored) em('; ' + T('Hinweis: Nasenausschnitt aktiv — „Schnittverlängerung NL (Art)" wird ignoriert, fest horizontal nach vorne'));
 
     const safeY = opt.safeY;
     const bc = opt.blockCut;
@@ -132,6 +133,11 @@
     // nasenoptimierten Blockschnitt („wrap").
     let iLE = 0, xLE = Infinity;
     { const Q = noseRefOf(L, R, RP); for (let i = 0; i <= last; i++) { if (Q[i].x < xLE) { xLE = Q[i].x; iLE = i; } } }
+    // Nasentasche im neuen Ablauf (nasenleiste.js): Bahn = Oberzug + Nasenverlängerung, danach die Taschenkette
+    // (erster Kettenpunkt = Eintritt an der Oberseite) + Unterseite. Nur gültig, wenn der Nasenindex übereinstimmt.
+    const NP = (proj.nosePk && !proj.pathOverride && !front && !(opt.cutSides === 'top' || opt.cutSides === 'bottom')
+      && !(proj.stack && proj.stack.count > 1) && proj.nosePk.iLE === iLE && proj.nosePk.iK > iLE && proj.nosePk.iK < last) ? proj.nosePk : null;
+    const noseSplit = !!((opt.noseSpar && opt.noseSpar.length) || NP);
 
     // Der Draht startet IMMER am Maschinennullpunkt (hinten/unten am Block; bei
     // „von vorne" vorne/unten vor der Nase).
@@ -227,8 +233,11 @@
       // Modus „Holmschnitt nach Oberseitenschnitt": beim VOLLEN Konturaufruf die
       // Kontur an der Nase (iLE) teilen — erst die Oberseite, dann Pause + Holm-
       // taschen von oben + Pause, dann die Unterseite (injectNoseSpar).
-      if (from === undefined && to === undefined && opt.noseSpar && opt.noseSpar.length) {
-        emitContour(1, iLE); injectNoseSpar(); emitContour(iLE + 1, last); return;
+      if (from === undefined && to === undefined && noseSplit) {
+        // NP: Teilung am Eintritt E der Tasche (nach Rückfahrt, Nasenrundung und Tasche von unten nach oben),
+        // sonst an der Nase.
+        const iS = NP ? NP.iK : iLE;
+        emitContour(1, iS); injectNoseSpar(); emitContour(iS + 1, last); return;
       }
       // ZWEI Durchgänge: erst je Segment den Roh-Vorschub berechnen, dann isolierte
       // Vorschub-Spitzen an Nase/EL per 3-Punkt-Median glätten (nur der Wert F, die
@@ -390,6 +399,23 @@
     // heizung wird die Pause mit M5/M3 umschlossen (kein Durchbrennen auf der Stelle).
     function injectNoseSpar() {
       const heat = opt.wireHeat, s = opt.wireS != null ? opt.wireS : (heat != null ? (+heat).toFixed(0) : null);
+      const hasSpar = !!(opt.noseSpar && opt.noseSpar.length);
+      if (NP) {
+        // Nasenausschnitt (neuer Ablauf): der Draht steht am Eintritt E der Tasche (er hat nach der Nasenverlängerung
+        // die Nasenrundung und die Tasche von unten nach oben geschnitten). Senkrecht nach oben bis auf Sicherheitshöhe,
+        // Pause (Oberschale abnehmen), Holme; danach durch die fertige Tasche zurück und den Unterzug.
+        const E = NP.iK;
+        em(`G1 ${ax.x}${fx(L[E].x)} ${ax.y}${f(safeY)} ${ax.u}${fx(R[E].x)} ${ax.v}${f(safeY)} F${capF(feed).toFixed(0)} ; ` + T('Nasenausschnitt fertig: senkrecht nach oben schneiden bis auf Sicherheitshöhe'));
+        if (heat != null) em('M5 ; Draht AUS für die Pause');
+        em('M0 ; ' + T('AUTO-PAUSE: Nasenausschnitt fertig. Oberschale abnehmen' + (hasSpar ? ' — Holmausschnitte folgen' : '') + '. Im Reiter „Schneiden" auf „Fortsetzen" drücken'));
+        if (heat != null) em('M3 S' + s + ' ; Draht EIN (nach Fortsetzen)');
+        if (hasSpar) {
+          (opt.noseSpar || []).forEach(l => em(l));   // Holmtaschen von oben, zurück auf Sicherheitshöhe
+          em(`G1 ${ax.x}${fx(L[E].x)} ${ax.y}${f(safeY)} ${ax.u}${fx(R[E].x)} ${ax.v}${f(safeY)} F${maxMove.toFixed(0)} ; ` + T('zurück über den Austrittspunkt des Nasenausschnitts (max), ohne weitere Pause'));
+        }
+        em(`G1 ${ax.x}${fx(L[E].x)} ${ax.y}${fy(L[E].y)} ${ax.u}${fx(R[E].x)} ${ax.v}${fy(R[E].y)} F${capF(feed).toFixed(0)} ; ` + T('senkrecht runter im Schnittspalt — durch den fertigen Nasenausschnitt zurück, danach der Unterzug'));
+        return;
+      }
       // Pause am Nasenüberstand: Oberseite fertig, BEVOR es hoch zum Holmschnitt geht
       // (Draht steht auf der Nase). Bei Drahtheizung M5/M3 um die Pause.
       if (heat != null) em('M5 ; Draht AUS für die Pause');
@@ -718,9 +744,10 @@
       em(`G1 ${ax.x}${fx(bc.front.l)} ${ax.y}${fy(L[iLE].y)} ${ax.u}${fx(bc.front.r)} ${ax.v}${fy(R[iLE].y)} F${feed.toFixed(0)} ; vertikal hoch auf Nasenhöhe (Blockvorderkante)`);
       em(`G1 ${ax.x}${fx(L[iLE].x)} ${ax.y}${fy(L[iLE].y)} ${ax.u}${fx(R[iLE].x)} ${ax.v}${fy(R[iLE].y)} F${feed.toFixed(0)} ; horizontal zurück zur Nase (im Schnittspalt, Schnittvorschub)`);
       // Holm „nach Oberseitenschnitt": Draht steht an der Nase, Oberseite fertig.
-      if (opt.noseSpar && opt.noseSpar.length) injectNoseSpar();
+      if (NP) emitContour(iLE + 1, NP.iK);
+      if (noseSplit) injectNoseSpar();
       // 4) Unterseite zurück bis zur EL-Verlängerung, dann hinten aus dem Block auf Null.
-      emitContour(iLE + 1, last);
+      emitContour((NP ? NP.iK : iLE) + 1, last);
       if (leadThrough(L[last], R[last], last))
         em(`G1 ${ax.x}${faceStop(LF.l, L[last])} ${ax.y}${fy(L[last].y)} ${ax.u}${faceStop(LF.r, R[last])} ${ax.v}${fy(R[last].y)} F${capF(feed).toFixed(0)} ; ` + T('horizontal durch den Abstand hinten zum hinteren Blockende (Schnittvorschub)'));
       em(`G1 ${ax.x}${f(0)} ${ax.y}${fy(L[last].y)} ${ax.u}${f(0)} ${ax.v}${fy(R[last].y)} F${airF.toFixed(0)} ; horizontal zum Null-X (außerhalb Block, max)`);

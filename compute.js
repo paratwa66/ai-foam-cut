@@ -489,6 +489,8 @@
     if (state.guillotine) state.guillotine.feed = fOf('guil');
     if (state.block) state.block.feed = fOf('blockV');
     if (state.blockH) state.blockH.feed = fOf('blockHz');
+    if (state.blockK) state.blockK.feed = fOf('blockK');
+    if (state.abplan) state.abplan.feed = fOf('abplan');
     if (state.modelGcode) state.modelGcode.feed = f;
     return true;
   }
@@ -513,7 +515,7 @@
   // 'seg' -> seg.matH / seg.negMatH). Blockzuschnitt im Reiter „Schneiden": Guillotine
   // ('guil'), Block ablängen ('blockV'), Block horizontal ('blockHz') — Werkstoff IMMER frei
   // wählbar (cfg.guilMatId/blockMatId/blockHzMatId), leer = Werkstoff der aktuellen G-Code-Quelle.
-  const PREP_MAT_KEYS = { guil: 'guilMatId', blockV: 'blockMatId', blockHz: 'blockHzMatId' };
+  const PREP_MAT_KEYS = { guil: 'guilMatId', blockV: 'blockMatId', blockHz: 'blockHzMatId', blockK: 'blockKMatId', abplan: 'abplanMatId' };
   function matFree() { return !!state.cfg.matFree; }
   function matIdFor(ctx) {
     ctx = ctx || matCtx();
@@ -661,6 +663,9 @@
     // hochgezogen, dass ihre Reichweite den Block-Überstand + Abstand überragt.
     // Nur vorhandene Verlängerungen (>0) werden angehoben — keine neue erzeugt.
     // Getrennt für Nasen- und Endleiste (extOverBlockLE/TE + eigener Abstand).
+    // Nasenausschnitt aktiv: „Schnittverlängerung NL (Art)" wird ignoriert, fest „horizontal nach vorne".
+    const nbOn = !!(App.noseBarOn && App.noseBarOn() && !state.cfg.sparOnly);
+    const leStyleEff = nbOn ? 'horizontal' : state.cfg.leStyle;
     if (state.cfg.extOverBlockLE || state.cfg.extOverBlockTE) {
       const be = blockExt(seg, cut.root.chord, cut.tip.chord);   // leR/leT/teR/teT = Block-Überstände
       if (state.cfg.extOverBlockLE) {
@@ -668,10 +673,10 @@
         // Nasenleiste: bei X-Schlaufe trägt die Schräge nur mit cos(Winkel) zur
         // Vorwärts-Reichweite bei (plus die horizontale Strecke B) -> entsprechend
         // aufbohren, damit die tatsächliche Reichweite den Block überragt.
-        const isX = state.cfg.leStyle === 'x';
+        const isX = leStyleEff === 'x';
         const cosf = isX ? Math.max(Math.cos((state.cfg.leAngle || 45) * Math.PI / 180), 0.2) : 1;
         const needLE = (block, b) => Math.max(0, (block + CLR) - (isX ? b : 0)) / cosf;
-        if (state.cfg.leStyle === 'x' || state.cfg.leStyle === 'horizontal') {
+        if (leStyleEff === 'x' || leStyleEff === 'horizontal') {
           if (leR > 0) leR = Math.max(leR, needLE(be.leR, l2R));
           if (leT > 0) leT = Math.max(leT, needLE(be.leT, l2T));
         }
@@ -704,8 +709,9 @@
       teExt: teR,  teExtTip:  teT,
       leAngle: state.cfg.leAngle, leGap: state.cfg.leGap,
       eightW: state.cfg.eightW, eightH: state.cfg.eightH, eightCross: state.cfg.eightCross,
-      leStyle: state.cfg.leStyle, teStyle: state.cfg.teStyle
+      leStyle: leStyleEff, teStyle: state.cfg.teStyle
     });
+    if (nbOn) pr.leIgnored = true;
     const segIdx = state.segments.indexOf(seg);
     const res = applyStack(App.noseBarApply ? App.noseBarApply(applySparCuts(pr, cut, segIdx), cut) : applySparCuts(pr, cut, segIdx));
     // Manueller Schnittpfad-Override dieses Segments (falls vorhanden).

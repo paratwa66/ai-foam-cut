@@ -314,6 +314,30 @@
       limits: App.machineLimits()
     };
   }
+  function buildBlockKScene() {
+    const mw = state.cfg.machineWidth, bp = App.blockKState();
+    const d1 = bp.dist, d2 = bp.dist + bp.length, y1 = Math.max(App.blockH(), bp.yBot + bp.height);   // Block der Szene = WERKSTOFF-Block
+    const guides = [{ y: bp.yBot, label: T('unten ') + bp.yBot + ' mm', color: '#ffb454' }, { y: bp.yBot + bp.height, label: T('oben ') + (bp.yBot + bp.height) + ' mm', color: '#ffb454' }];
+    return {
+      machineWidth: mw,
+      ax: { x: state.cfg.axX, y: state.cfg.axY, u: state.cfg.axU, v: state.cfg.axV },
+      blocks: [{ seg: 0, x0: d1, x1: d2, y0: 0, y1, x0t: d1, x1t: d2, y0t: 0, y1t: y1, z0: 0, z1: mw, cutZ0: 0, cutZ1: mw, guides }],
+      defaultSeg: 0,
+      limits: App.machineLimits()
+    };
+  }
+  function buildAbplanScene() {
+    const mw = state.cfg.machineWidth, bp = App.abplanState();
+    const L = Math.max(1, +bp.len || 1), D = Math.max(0, +bp.depth || 0);
+    const guides = [{ y: -D, label: T('Abtragtiefe ') + D + ' mm', color: '#ffb454' }];
+    return {
+      machineWidth: mw,
+      ax: { x: state.cfg.axX, y: state.cfg.axY, u: state.cfg.axU, v: state.cfg.axV },
+      blocks: [{ seg: 0, x0: 0, x1: L, y0: -(D + 20), y1: 0, x0t: 0, x1t: L, y0t: -(D + 20), y1t: 0, z0: 0, z1: mw, cutZ0: 0, cutZ1: mw, guides }],
+      defaultSeg: 0,
+      limits: App.machineLimits()
+    };
+  }
   function buildCalibScene() {
     const cb = state.calib, mw = state.cfg.machineWidth, n = Math.max(1, cb.count | 0);
     const totalH = n * cb.hgt + (n - 1) * (cb.gap || 0), x0 = cb.xDist || 20, x1 = x0 + cb.len, yBase = cb.yBase || 0;
@@ -1006,7 +1030,7 @@
   // ---- Registry: eigene Top-Level-Namen bereitstellen ----
   Object.assign(App, { cutContextLabel, updateSimContext, FEED_JUMP_FRAC, applyGcodeEdit, blockCenterY, blockCutGeom, blockOrigin, blockRearX });
   Object.assign(App, { blockFrontX, cutFront, machX });
-  Object.assign(App, { buildBlockHScene, buildBlockScene, buildCalibScene, buildGuillotineScene, buildNegScene, buildScene });
+  Object.assign(App, { buildAbplanScene, buildBlockKScene, buildBlockHScene, buildBlockScene, buildCalibScene, buildGuillotineScene, buildNegScene, buildScene });
   Object.assign(App, { applyDemoUi, demoMaskView, demoOn, download, downloadNamed, feedJumpLines, maskGcodeLine, negProjection, outsideFeed });
   Object.assign(App, { askAxisNames, exportGcodeAxes, remapAxisWords });
   Object.assign(App, { blockCutY, busy, promptFileName, nativeSave, nativeSaveAvail, safeHeight, saveFilePicker, setGcode, setGcodeEditMode, shellCutGeom, sweepProj2, toast, withBusy });

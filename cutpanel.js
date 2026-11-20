@@ -326,6 +326,47 @@
         + 'im Reiter „Schneiden" wählen und übernehmen.');
       side.appendChild(zuH.g);
 
+      // 3b) Blockzuschnitt komplett ------------------------------------
+      const zuK = grp('Blockzuschnitt komplett', false, 'cut'); zuK.g.classList.add('grp-sub');
+      prepMatRow(zuK.body, 'blockKMatId', 'blockK', 'Werkstoff für „Blockzuschnitt komplett" (Abbrand, Heizung, Vorschub automatisch) — unabhängig von der übrigen Werkstoff-Zuordnung. „wie G-Code-Quelle" = Werkstoff der im Reiter „G-Code" gewählten Quelle.');
+      const bk = App.blockKState();
+      numRow(zuK.body, 'Abstand von vorne (mm)', () => bk.dist,
+        v => { bk.dist = Math.max(0, v); refreshCutSource('blockK'); }, { min: 0, step: 0.1, norender: true,
+        hint: 'Vordere X-Kante des fertigen Quaders (Abstand vom Maschinen-Nullpunkt X0).' });
+      numRow(zuK.body, 'Abstand von unten (mm)', () => bk.yBot,
+        v => { bk.yBot = Math.max(0, v); refreshCutSource('blockK'); }, { min: 0, step: 0.1, norender: true,
+        hint: 'Untere Kante des fertigen Quaders ab Y0.' });
+      numRow(zuK.body, 'Länge X (mm)', () => bk.length,
+        v => { bk.length = v; refreshCutSource('blockK'); }, { min: 1, step: 0.1, norender: true,
+        hint: 'Fertige Länge des Quaders in X (vorne → hinten).' });
+      numRow(zuK.body, 'Höhe Y (mm)', () => bk.height,
+        v => { bk.height = v; refreshCutSource('blockK'); }, { min: 1, step: 0.1, norender: true,
+        hint: 'Fertige Höhe des Quaders in Y.' });
+      feedRow(zuK.body, 'Vorschub (mm/min)', () => bk.feed,
+        v => { bk.feed = v; refreshCutSource('blockK'); }, { min: 1, norender: true });
+      hint(zuK.body, 'Ablauf in einem Zug, ringsum abbrand-kompensiert: vorne unten einfahren → vorne nach oben → Oberseite nach hinten → '
+        + 'hinten nach unten → Unterseite nach vorn → im Schnittspalt zurück. Als G-Code-Quelle „Blockzuschnitt komplett" im Reiter „Schneiden" wählen und übernehmen.');
+      side.appendChild(zuK.g);
+
+      // 3c) Abplanen (Styrodur-Unterlage) ----------------------------
+      const zuA = grp('Abplanen', false, 'cut'); zuA.g.classList.add('grp-sub');
+      prepMatRow(zuA.body, 'abplanMatId', 'abplan', 'Werkstoff für „Abplanen" (Abbrand, Heizung, Aufheizzeit, Vorschub automatisch) — unabhängig von der übrigen Werkstoff-Zuordnung. „wie G-Code-Quelle" = Werkstoff der im Reiter „G-Code" gewählten Quelle.');
+      const ab = App.abplanState();
+      numRow(zuA.body, 'Länge X (mm)', () => ab.len,
+        v => { ab.len = Math.max(1, v); refreshCutSource('abplan'); }, { min: 1, step: 1, norender: true,
+        hint: 'Länge der abzuplanenden Fläche ab dem Nullpunkt in X. Der Draht fährt zusätzlich den Sicherheitsabstand weiter.' });
+      numRow(zuA.body, 'Tiefe unter Nullpunkt (mm)', () => ab.depth,
+        v => { ab.depth = Math.max(0, v); refreshCutSource('abplan'); }, { min: 0, step: 0.1, norender: true,
+        hint: 'Der Draht fährt auf Y = −Tiefe und plant in dieser Höhe nach vorn. Als positive Zahl eingeben.' });
+      numRow(zuA.body, 'Sicherheitsabstand (mm)', () => ab.safe,
+        v => { ab.safe = Math.max(0, v); refreshCutSource('abplan'); }, { min: 0, step: 1, norender: true,
+        hint: 'Hub nach oben und Zugabe in X über die Länge hinaus (Eilgang).' });
+      feedRow(zuA.body, 'Vorschub (mm/min)', () => ab.feed,
+        v => { ab.feed = v; refreshCutSource('abplan'); }, { min: 1, norender: true });
+      hint(zuA.body, 'Ablauf: Sicherheitsabstand hoch → in X um Länge + Sicherheitsabstand (Eilgang) → aufheizen → auf Y = −Tiefe runter → '
+        + 'mit Schnittvorschub nach vorn bis X0 → um den Abbrand nach unten → dort neuer Nullpunkt. Als G-Code-Quelle „Abplanen" im Reiter „Schneiden" wählen und übernehmen.');
+      side.appendChild(zuA.g);
+
       // --- Kalibrierung (Testschnitt) -----------------------------------
       // Eigene Abschnitts-Überschrift (konsistent zu „Blockzuschnitt"), darunter
       // die Funktion als eingeklappte Untergruppe.
@@ -580,6 +621,21 @@
     if (!App.buildDxfScene) {
       const o = document.querySelector('#cutSource option[value="dxf"]'); if (o) o.remove();
     }
+    // Quelle „Blockzuschnitt komplett" (neu) ergänzen, falls die Auswahlliste sie noch nicht hat.
+    (function () {
+      const sel = document.getElementById('cutSource');
+      if (!sel || sel.querySelector('option[value="blockK"]')) return;
+      const o = document.createElement('option'); o.value = 'blockK'; o.textContent = 'Blockzuschnitt komplett';
+      const ref = sel.querySelector('option[value="blockH"]');
+      if (ref && ref.nextSibling) sel.insertBefore(o, ref.nextSibling); else sel.appendChild(o);
+    })();
+    (function () {
+      const sel = document.getElementById('cutSource');
+      if (!sel || sel.querySelector('option[value="abplan"]')) return;
+      const o = document.createElement('option'); o.value = 'abplan'; o.textContent = 'Abplanen';
+      const ref = sel.querySelector('option[value="blockK"]') || sel.querySelector('option[value="blockH"]');
+      if (ref && ref.nextSibling) sel.insertBefore(o, ref.nextSibling); else sel.appendChild(o);
+    })();
     App.applyTableUi();
     // grblHAL-Pendant — Achsnamen und G-Code kommen aus der App. Die G-Code-
     // Quelle (Tragfläche/G-Code oder Blockzurichten) wählt der Reiter „Schneiden".
@@ -606,6 +662,14 @@
         if (src && src.value === 'blockH') {
           const g = blockHGcode();
           return { text: App.applyFeedMode(g.text), scene: buildBlockHScene(), label: 'Block horizontal' };
+        }
+        if (src && src.value === 'blockK') {
+          const g = App.blockKGcode();
+          return { text: App.applyFeedMode(g.text), scene: App.buildBlockKScene(), label: 'Blockzuschnitt komplett' };
+        }
+        if (src && src.value === 'abplan') {
+          const g = App.abplanGcode();
+          return { text: App.applyFeedMode(g.text), scene: App.buildAbplanScene(), label: 'Abplanen' };
         }
         if (src && src.value === 'calib') {
           const g = calibGcode();

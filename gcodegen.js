@@ -402,6 +402,96 @@
     const text = applyPreheat(out.join('\n'));
     return { text, lines: text.split('\n').length, cutLength: cutLen };
   }
+  /* Blockzuschnitt komplett: Quader rundum in EINEM Zug aus dem Block schneiden.
+   * Ablauf: vorne unten einfahren -> vorne nach oben -> Oberseite nach hinten ->
+   * hinten nach unten -> Unterseite nach vorn (Kontur geschlossen) -> im Schnittspalt
+   * zurück. Lage über Abstand von vorne (dist) und von unten (yBot); length/height =
+   * fertige Maße. Der Draht läuft ringsum kerf/2 AUSSERHALB der Sollkontur. */
+  // Zustand von „Blockzuschnitt komplett": fehlt er (z. B. altes Projekt / geladene Einstellungen), werden die Standardwerte ergänzt.
+  function blockKState() {
+    const d = { dist: 20, yBot: 15, length: 300, height: 60, feed: 300 };
+    if (!state.blockK || typeof state.blockK !== 'object') state.blockK = Object.assign({}, d);
+    else Object.keys(d).forEach(k => { if (state.blockK[k] == null || isNaN(+state.blockK[k])) state.blockK[k] = d[k]; });
+    return state.blockK;
+  }
+  App.blockKState = blockKState;
+  const blockKGcode = withPrep(blockKGcode_, 'blockK');
+  function blockKGcode_() {
+    const bp = blockKState();
+    const ax = { x: state.cfg.axX, y: state.cfg.axY, u: state.cfg.axU, v: state.cfg.axV };
+    const pr = state.cfg.precision != null ? state.cfg.precision : 2, f = v => v.toFixed(pr);
+    const feed = bp.feed || 300, k = App.kerfForSpeed(App.matIdFor('blockK'), feed);
+    const x0 = Math.max(0, bp.dist - k / 2), x1 = bp.dist + bp.length + k / 2;
+    const yb = Math.max(0, bp.yBot - k / 2), yt = bp.yBot + bp.height + k / 2;
+    const out = [], em = s => out.push(window.I18N ? window.I18N.tc(s) : s);
+    const g0 = (x, y, c) => em(`G0 ${ax.x}${f(x)} ${ax.y}${f(y)} ${ax.u}${f(x)} ${ax.v}${f(y)}` + (c ? ' ; ' + c : ''));
+    const g1 = (x, y, F, c) => em(`G1 ${ax.x}${f(x)} ${ax.y}${f(y)} ${ax.u}${f(x)} ${ax.v}${f(y)} F${F.toFixed(0)}` + (c ? ' ; ' + c : ''));
+    em('; ==== HotWing – Blockzuschnitt komplett ====');
+    em('; ' + T('Quader ') + bp.length + ' × ' + bp.height + T(' mm · Abstand von vorne ') + bp.dist + T(' mm · Abstand von unten ') + bp.yBot + T(' mm · Vorschub ') + feed + ' mm/min');
+    em('; ' + T('Abbrand ') + k.toFixed(2) + T(' mm ringsum kompensiert (nach außen) · Bezug Y0 = Maschinen-Nullpunkt · beide Türme identisch'));
+    em('G21 ; mm'); em('G90 ; absolut'); em('G94 ; Vorschub in mm/min');
+    em('F' + feed.toFixed(0) + ' ; Startvorschub setzen');
+    em(App.matNote());
+    const heat = App.currentHeat();
+    if (heat != null) em('M3 S' + App.currentWireS() + ' ; Draht EIN (' + (+heat).toFixed(0) + ' %)');
+    g0(0, 0, 'Start am Maschinennullpunkt (X0/Y0)');
+    g0(0, yb, 'hoch auf untere Schnitthöhe (vor dem Block)');
+    g1(x0, yb, feed, T('vorne unten einfahren'));
+    g1(x0, yt, feed, T('vorne senkrecht nach oben'));
+    g1(x1, yt, feed, T('Oberseite waagrecht nach hinten schneiden'));
+    g1(x1, yb, feed, T('hinten senkrecht nach unten'));
+    g1(x0, yb, feed, T('Unterseite waagrecht nach vorn schneiden (Kontur geschlossen)'));
+    g0(0, yb, 'im Schnittspalt zurück nach vorn');
+    g0(0, 0, 'runter auf den Maschinennullpunkt (X0/Y0)');
+    if (heat != null) em('M5 ; Draht AUS');
+    em('M2 ; Ende');
+    const text = applyPreheat(out.join('\n'));
+    return { text, lines: text.split('\n').length, cutLength: (x1 - x0) * 2 + (yt - yb) * 2 };
+  }
+  /* Abplanen: Styrodur-Unterlage waagrecht abfräsen (heißdrahtschneiden), damit Rillen verschwinden.
+   * Ablauf: Sicherheitsabstand hoch (Eilgang) -> in X um Länge + Sicherheitsabstand (Eilgang) -> Draht aufheizen
+   * (Aufheizzeit des Werkstoffs) -> auf Y = −Tiefe runter -> mit Schnittvorschub nach vorn bis X0 -> um den Abbrand
+   * nach unten -> dort neuen Nullpunkt setzen (G10 L20). */
+  function abplanState() {
+    const d = { len: 300, depth: 1, safe: 10, feed: 300 };
+    if (!state.abplan || typeof state.abplan !== 'object') state.abplan = Object.assign({}, d);
+    else Object.keys(d).forEach(k => { if (state.abplan[k] == null || isNaN(+state.abplan[k])) state.abplan[k] = d[k]; });
+    return state.abplan;
+  }
+  App.abplanState = abplanState;
+  const abplanGcode = withPrep(abplanGcode_, 'abplan');
+  function abplanGcode_() {
+    const bp = abplanState();
+    const ax = { x: state.cfg.axX, y: state.cfg.axY, u: state.cfg.axU, v: state.cfg.axV };
+    const pr = state.cfg.precision != null ? state.cfg.precision : 2, f = v => v.toFixed(pr);
+    const feed = bp.feed || 300, k = App.kerfForSpeed(App.matIdFor('abplan'), feed);
+    const L = Math.max(0, +bp.len || 0), D = Math.max(0, +bp.depth || 0), s = Math.max(0, +bp.safe || 0);
+    const xEnd = L + s, yDown = -D, yKerf = -D - k;
+    const sec = +state.material.preheatSec || 0;
+    const out = [], em = s => out.push(window.I18N ? window.I18N.tc(s) : s);
+    const g0 = (x, y, c) => em(`G0 ${ax.x}${f(x)} ${ax.y}${f(y)} ${ax.u}${f(x)} ${ax.v}${f(y)}` + (c ? ' ; ' + c : ''));
+    const g1 = (x, y, F, c) => em(`G1 ${ax.x}${f(x)} ${ax.y}${f(y)} ${ax.u}${f(x)} ${ax.v}${f(y)} F${F.toFixed(0)}` + (c ? ' ; ' + c : ''));
+    em('; ==== HotWing – Abplanen ====');
+    em('; ' + T('Länge ') + L + T(' mm (+ ') + s + T(' mm Sicherheitsabstand) · Tiefe ') + D + T(' mm unter dem Nullpunkt · Vorschub ') + feed + ' mm/min');
+    em('; ' + T('Abbrand ') + k.toFixed(2) + T(' mm – danach um diesen Betrag nach unten und neuer Nullpunkt'));
+    em('G21 ; mm'); em('G90 ; absolut'); em('G94 ; Vorschub in mm/min');
+    em('F' + feed.toFixed(0) + ' ; Startvorschub setzen');
+    em(App.matNote());
+    const heat = App.currentHeat();
+    g0(0, 0, 'Start am Maschinennullpunkt (X0/Y0)');
+    g0(0, s, T('hoch um den Sicherheitsabstand (Eilgang)'));
+    g0(xEnd, s, T('in X um Länge + Sicherheitsabstand (Eilgang)'));
+    if (heat != null) em('M3 S' + App.currentWireS() + ' ; Draht EIN (' + (+heat).toFixed(0) + ' %)');
+    if (sec > 0) em('G4 P' + sec + ' ; ' + T('aufheizen'));
+    g1(xEnd, yDown, feed, T('runter auf Y = −Tiefe'));
+    g1(0, yDown, feed, T('abplanen: mit Schnittvorschub nach vorn bis X0'));
+    g1(0, yKerf, feed, T('um den Abbrand nach unten'));
+    if (heat != null) em('M5 ; Draht AUS');
+    em(`G10 L20 P0 ${ax.x}0 ${ax.y}0 ${ax.u}0 ${ax.v}0 ; ` + T('neuer Nullpunkt (Werk-Null) an dieser Position'));
+    em('M2 ; Ende');
+    const text = out.join('\n');
+    return { text, lines: text.split('\n').length, cutLength: L + s };
+  }
   /* Abbrand-Kalibrierung: schneidet `count` Testrechtecke (Länge×Höhe), gestapelt
    * mit Abstand `gap`, am gewählten Vorschub. Optional um Abbrand/2 nach außen
    * kompensiert (dann sollte das FERTIGE Rechteck das Nennmaß haben). Ohne
@@ -1122,7 +1212,7 @@
   }
 
   // ---- Registry ----
-  Object.assign(App, { applyFeedMode, applyPauseReheat, applyPreheat, applyRelay, autoGen, relayCmds, blockHGcode, calibGcode, contourCutter, genOne, guillotineGcode });
+  Object.assign(App, { applyFeedMode, applyPauseReheat, applyPreheat, applyRelay, autoGen, relayCmds, blockHGcode, blockKGcode, abplanGcode, calibGcode, contourCutter, genOne, guillotineGcode });
   Object.assign(App, { heatNote, negGcode, regenGcode, sparOnlyProgram, sparPocketLines, toInverseTime, watermark });
   if (App.dxfProjection) App.dxfGcode = dxfGcode;
 })();

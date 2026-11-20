@@ -337,7 +337,7 @@
       // (je Tragfläche; 'seg' -> seg.matH/seg.negMatH), Blockzuschnitt-Werkstoffe siehe unten.
       matFree: false, matHMode: 'all', negMatHMode: 'all',
       // Werkstoff je Blockzuschnitt-Befehl (immer frei wählbar, null = wie Kern): Guillotine, Block ablängen, Block horizontal.
-      guilMatId: null, blockMatId: null, blockHzMatId: null,
+      guilMatId: null, blockMatId: null, blockHzMatId: null, blockKMatId: null, abplanMatId: null,
       designBlockH: null,                 // Blockhöhe nur zur Ansicht im Tragflächendesigner (null = wie Kerndesign)
       // Gewichtsabschätzung je Tragfläche (Reiter „Projektübersicht", wings.js wingWeight):
       // wtCount = Stückzahl (Hälften), wtSheetMode 'none'|'density'|'area' (Beplankung aus
@@ -382,6 +382,11 @@
     // trennt nur oben (auf Zielhöhe yTop), mode='topbottom' trennt oben+unten
     // (fertige Scheibe zwischen yBot und yTop). dist/length = X-Ausdehnung.
     blockH: { dist: 20, length: 300, yTop: 60, yBot: 15, mode: 'height', feed: 300, over: 10, pass: 'cutRapid' },   // over = X-Überlauf vor/hinter dem Block (mm); pass = Ablauf bei „nur oben": rapidCut (Eilgang hin, Schnitt zurück) | cutRapid (Schnitt hin, Eilgang zurück; Standard) | cutCut (Schnitt hin und zurück)
+    // Blockzuschnitt komplett: Quader rundum in einem Zug (vorne unten rein -> vorne hoch -> Oberseite nach hinten -> hinten runter -> Unterseite nach vorn).
+    // dist = Abstand von vorne (X ab Nullpunkt), yBot = Abstand von unten (Y ab Y0), length/height = fertige Maße.
+    blockK: { dist: 20, yBot: 15, length: 300, height: 60, feed: 300 },
+    // Abplanen der Styrodur-Unterlage: len = Länge in X, depth = Tiefe unter dem Nullpunkt (Y = −depth), safe = Sicherheitsabstand (Hub und X-Zugabe).
+    abplan: { len: 300, depth: 1, safe: 10, feed: 300 },
     activeSeg: 'all',                    // Start: kein Segment aufgeklappt (Karten zu)
     activeSpar: null,                    // aktiver Holm (aufgeklappt); null = keiner
     activeTab: 'material',               // aktiver Reiter -> steuert die Sidebar (Start: Projektübersicht und Werkstoffzuordnung)

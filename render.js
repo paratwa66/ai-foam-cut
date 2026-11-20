@@ -1098,6 +1098,8 @@
       }
     });
     drawSparTags(ctx, sparTags);
+    // Teilrippen (nasenleiste.js): gestrichelte grüne Linie je Teilrippe, nur im Kerndesign.
+    const partLeg = (App.partRibPlan && state.activeTab === 'core') ? App.partRibPlan({ ctx, V, poly, leTe }) : null;
 
     // Legende oben links: nur, was gerade gezeichnet ist, mit echter Probe.
     const legP = [['#8b98a8', T('▲ Flugrichtung')]];
@@ -1105,6 +1107,7 @@
     if (state.cfg.showBlock) legP.push(L('#5d6b7d', T('Block (Rohling)'), dashFor('block', [7, 5]), 'rect'));
     if (anyHinge) legP.push(L(App.PAL.hinge, T('Scharnierlinie'), dashFor('hinge', [5, 4]), 'line', 1.6));
     if (anySpar) sparLegend(legP);
+    if (partLeg) legP.push(L(partLeg[0], partLeg[1], partLeg[2], partLeg[3], partLeg[4]));
     if (pc2Leg) pc2Leg.forEach(e => legP.push(L(e[0], e[1], e[2], e[3], e[4])));
     legP.push(L('#ffffff44', T('Viertel-Sehnenlinie (t/4)'), [6, 4], 'line', 1));
     drawLegend(ctx, 14, 20, legP, { top: true });
@@ -1829,7 +1832,7 @@
     leg.push(['#8b98a8', dh ? (T('Profile in Einbaulage (V-Form-Versatz ') + rise.toFixed(0) + T(' mm)'))
                             : T('Profile flach überlagert (V-Form ausgeblendet)')]);
     if (ktOn) App.kernTeileDraw(ctx, V, leg, { idx, dyR, dyT, shR, shT, kerf: cfgKerf });
-    if (App.noseBarDraw && !ktOn) App.noseBarDraw(ctx, V, leg, { idx, dyR, dyT, shR, shT, err: !!(pr && pr.noseBarErr) });
+    if (App.noseBarDraw && !ktOn) App.noseBarDraw(ctx, V, leg, { idx, dyR, dyT, shR, shT, err: !!(pr && pr.noseBarErr), grow: pr && pr.noseBarGrow || 0 });
     drawLegend(ctx, 14, h - 8, leg, { kheat });
     if (state.activeTab === 'core') drawSparWarnings(ctx, w, h);
     if (state.activeTab === 'core') App.ptDrawHandles(ctx, App.profDraw, 'prof');

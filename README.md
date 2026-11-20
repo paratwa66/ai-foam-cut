@@ -1,109 +1,43 @@
-# AI Foam Cut
+# AI Foam Cut – Paratwa Edition
 
-Freie Software zum Entwerfen von Modellflug-Tragflächen und zum Erzeugen von G-Code für
-CNC-Heißdrahtschneider (2 Türme / 4 Achsen), Fräsen und den Formenbau.
+**DE:** Persönlicher Fork von *AI Foam Cut (AIFC)* – einer Software zur Konstruktion und zum CNC-Schneiden mit dem Heißdraht (Electron/JavaScript, GRBL/grblHAL). Das Original stammt von **Manuel** (siehe Upstream-Repository). Diese Edition ergänzt Funktionen für den praktischen Werkstattbetrieb.
 
-Entwickelt als vollwertige Alternative zu kommerziellen Programmen dieser Art — und seit
-September 2026 quelloffen unter der GPL-3.0.
+**EN:** Personal fork of *AI Foam Cut (AIFC)* – software for designing and CNC-cutting foam parts with a hot wire (Electron/JavaScript, GRBL/grblHAL). The original was written by **Manuel** (see upstream repository). This edition adds features for day-to-day workshop use.
 
-## ⚠️ Sicherheitshinweis
+> Upstream / Original: [https://github.com/aifoamcut/ai-foam-cut](https://github.com/aifoamcut/ai-foam-cut)
 
-Dieses Programm steuert Maschinen an: glühende Drähte bei mehreren hundert Grad und Fräsen mit
-schnell drehenden Werkzeugen. **Betrieb ausschließlich auf eigene Verantwortung.**
+## Neu in der Paratwa Edition / What's new
 
-- Eine erreichbare Not-Aus-Einrichtung ist Voraussetzung. Das Programm ersetzt sie nicht.
-- Maschine niemals unbeaufsichtigt laufen lassen.
-- Erzeugten G-Code vor dem ersten Lauf prüfen (die Wegvorschau ist dafür da).
-- Es gibt **keine Gewährleistung** und **keine Haftung** — siehe Abschnitte 15–17 der `LICENSE`.
+| DE | EN |
+|---|---|
+| **Nasentasche** (Nasenleiste): Höhe, Höhenlage, Tiefe frei, Drehung in 0,1°-Schritten, Teilrippen, DXF-Export; Tasche im G-Code folgt der Konstruktion auch bei Abbrand-Bezugsseite oben/unten | **Nose pocket**: free height, vertical offset, depth, rotation in 0.1° steps, partial ribs, DXF export; the pocket in the G-code now matches the design also with kerf datum top/bottom |
+| **Komplexe Form ausrichten** (DXF-Formen) | **Align complex shape** (DXF shapes) |
+| **Kalibrier-Assistent** für den Abbrand in der Werkstoffdatenbank | **Kerf calibration assistant** in the material database |
+| **Blockzuschnitt komplett** (Quader aus dem Rohblock, mit Abbrandkompensation) | **Full block trim** (cuboid from the raw block, with kerf compensation) |
+| **Abplanen** der Styrodur-Unterlage inkl. automatischem neuen Nullpunkt | **Surfacing** of the foam bed incl. automatic new work zero |
+| **Tempo-Wahl** der Simulation im Schneiden-Monitor (u. a. 25×, 50×, 200×) | **Simulation speed selector** in the cutting monitor (e.g. 25×, 50×, 200×) |
 
-## Funktionen
+Details: [CHANGELOG.md](CHANGELOG.md) · [docs/HANDBUCH_DE.md](docs/HANDBUCH_DE.md) · [docs/MANUAL_EN.md](docs/MANUAL_EN.md) · [CHANGED_FILES.md](CHANGED_FILES.md)
 
-- **Tragflächen**: Mehrsegmentflügel, Profil je Segment (NACA oder `.dat`), Pfeilung, Schränkung,
-  Holm- und Spar-Schnitte, Beplankungsabzug, Abbrandkompensation je Designebene
-- **Kern- und Negativdesign**: Negativschalen, Kern-Stege, Kern zerteilen
-- **Formenbau**: Urmodell und Negativform als STL, B-Spline-Glättung, Trennfläche,
-  Krümmungs- und Zebra-Analyse, STEP-Export
-- **Rumpf**: Loft aus Bezier-Splines, Spanten mit Anformungen
-- **Fräse**: 2D-CAM (außen/innen/Tasche/Bohren, Haltestege) und GRBL-Steuerung
-- **CAD-Bearbeitung**: eigener 2D-Editor mit AutoCAD-artiger Befehlszeile
-- **3D-Modell**: STL/OBJ/STEP und Flugsimulator-Modelle (X-Plane, FlightGear, glTF) zerlegen,
-  Segmente zusammensetzen
-- **Schriften**: Linienschriften und TTF/OTF als Schnittbahn
-- **Tragflächenausschnitt**: Profil als Ausschnitt aus einem Block oder als Profilstück schneiden
-  (Anfahrt oben/unten/vorne/hinten, Startpunkt per Klick)
-- **Datenaustausch**: XFLR5 (`.xfl`), FLZ_vortex (`.flz`), PC2, GMFC (`.cnc`), DXF, STL, STEP
-- **Maschinensteuerung**: G-Code-Erzeugung, Wegvorschau, GRBL-Anbindung, Drahtheizungskalibrierung
-
-Zweisprachig (Deutsch/Englisch), umschaltbar in den Einstellungen.
-
-## Starten
-
-Es gibt zwei Wege, dasselbe Programm zu starten.
-
-**Im Browser** (Python, keine weiteren Abhaengigkeiten):
+## Start / Run
 
 ```
-python launcher.py
+python launcher.py          # Test / test
+BUILD_TOOL_ELECTRON.bat     # Windows-Build / Windows build
 ```
 
-Ein Browserfenster oeffnet sich, alles laeuft lokal auf `127.0.0.1`.
-Voraussetzung: Python 3.11 oder neuer.
+## Lizenz / License
 
-**Im eigenen Fenster** (Electron - fuehlt sich wie ein normales Programm an,
-eigener Serieller-Port-Dialog):
+GPL-3.0 – wie das Original. Dieses Projekt ist ein abgeleitetes Werk; alle Änderungen stehen ebenfalls unter GPL-3.0. Copyright des Originals bleibt bei den ursprünglichen Autoren.
+GPL-3.0 – same as the original. This is a derivative work; all modifications are also GPL-3.0. Original copyright remains with the original authors.
 
-```
-npm install
-npm start
-```
+## Haftung / Disclaimer
 
-## Eigene Ausgabe bauen
+DE: Heißdraht-Maschinen und G-Code sind sicherheitsrelevant. Neue Funktionen (insbesondere Abplanen mit Nullpunkt-Setzen über `G10 L20`) vor dem Einsatz immer erst im Trockenlauf/Simulation prüfen. Nutzung auf eigene Verantwortung.
+EN: Hot-wire machines and G-code are safety-relevant. Always check new features (especially surfacing with work-zero setting via `G10 L20`) in simulation/dry run first. Use at your own risk.
 
-Beide Varianten lassen sich zu einer eigenstaendigen Datei packen. Ueber
-`features.json` waehlst du, welche Funktionen enthalten sein sollen - nuetzlich
-fuer schlanke Ausgaben oder zum Ausprobieren einzelner Bereiche.
+## Weiterführend
+- Selbst bauen und exe als Release veröffentlichen: `docs/BUILD_DE.md`
 
-Unter Windows geht das mit einem Doppelklick, sonst von der Befehlszeile:
-
-| Variante | Doppelklick | Befehlszeile |
-|---|---|---|
-| **Browser** (PyInstaller, `.exe` die den Browser oeffnet) | `BUILD_TOOL.bat` | `python build_tool.py` |
-| **Electron** (eigenes Fenster, `.exe` bzw. AppImage) | `BUILD_TOOL_ELECTRON.bat` | `python build_tool_electron.py` |
-
-Beide oeffnen ein Fenster: Funktionen anhaken, Version eintragen, bauen. Das
-Protokoll laeuft im Fenster mit, der Bau laesst sich abbrechen. Einstellungen
-lassen sich als Profil speichern und wieder laden.
-
-Ohne Fenster geht es auch:
-
-```
-python build_tool_electron.py --cli --name "AI Foam Cut" --version 2.11
-python build_tool_electron.py --cli --target linux
-```
-
-Dafuer werden Node.js und die Abhaengigkeiten aus `package.json` gebraucht
-(einmalig `npm install --prefix %USERPROFILE%/afc-build`). Die Linux-Ausgabe
-baut electron-builder unter Linux oder in WSL.
-
-## Dokumentation
-
-- `BENUTZERHANDBUCH.md` — Benutzerhandbuch (deutsch), zusätzlich als PDF
-- `USER_MANUAL_EN.md` — kurze englische Fassung
-- `ENTWICKLUNG.md` — Aufbau der Module, interne Zusammenhänge
-- `CHANGELOG.md` — Änderungen (deutsch), `CHANGELOG_EN.md` (englisch)
-
-## Lizenz
-
-GNU General Public License, Version 3 oder später — siehe `LICENSE`.
-
-Das heißt: benutzen, weitergeben und ändern ist frei. Wer eine geänderte Fassung weitergibt,
-muss den Quellcode ebenfalls unter der GPL offenlegen.
-
-Die Lizenzen der mitgelieferten Fremdkomponenten stehen in `THIRD_PARTY_LICENSES.md`.
-
-## Mitmachen
-
-Fehlerberichte und Verbesserungen sind willkommen. Wer Code beisteuert, stellt ihn unter dieselbe
-Lizenz (GPL-3.0-or-later).
-
-Beim Melden eines Fehlers hilft es sehr, die Projektdatei mitzuschicken, mit der er auftritt.
+## See also
+- Building it yourself and publishing the exe as a release: `docs/BUILD_EN.md`

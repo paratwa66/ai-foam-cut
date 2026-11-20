@@ -1032,7 +1032,7 @@
     $('#simSide').onclick = () => { Object.assign(mainCam, CAM_SIDE, { pivot: null }); frameScene(); };
     $('#simFront').onclick = () => { Object.assign(mainCam, CAM_FRONT, { pivot: null }); frameScene(); };
     $('#simView0').onclick = () => { resetCam(mainCam); frameScene(); };
-    $('#simSpeed').onchange = e => S.speed = parseFloat(e.target.value);
+    $('#simSpeed').onchange = e => { S.speed = parseFloat(e.target.value); const mm = document.getElementById('simMSpeed'); if (mm) mm.value = e.target.value; };
     $('#simSeek').oninput = e => {
       S.t = S.total * (parseInt(e.target.value, 10) / 1000);
       syncBar();
@@ -1105,6 +1105,15 @@
     monMounted = true;
     const bind = (id, C) => { const b = document.getElementById(id); if (b) b.onclick = () => Object.assign(monCam, C, { pivot: null }); };
     bind('simMTop', CAM_TOP); bind('simMSide', CAM_SIDE); bind('simMFront', CAM_FRONT); bind('simMView0', CAM0);
+    // Tempo der Vorschau-Simulation im Reiter „Schneiden" (gleicher Faktor wie im 3D-Simulationsfenster).
+    const ms = document.getElementById('simMSpeed');
+    if (ms) {
+      ms.value = String(S.speed);
+      ms.onchange = e => {
+        S.speed = parseFloat(e.target.value) || 25;
+        const m = document.getElementById('simSpeed'); if (m) m.value = e.target.value;
+      };
+    }
   }
 
   /* Programm des Reiters „Schneiden" in den Monitor laden (das im Reiter

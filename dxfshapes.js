@@ -820,6 +820,22 @@
           hint: 'Zielpunktzahl der synchronen Schnittbahn (längenproportional auf die Intervalle verteilt).' });
     side.appendChild(sy.g);
 
+    // --- Komplexe Form ausrichten: Punkt 1 auf gleiche Höhe, INNEN in X verschieben ---
+    const ka = App.grp('Komplexe Form ausrichten', true, 'dxf');
+    App.hint(ka.body, 'Wirkt auf das im rechten Fenster aktive Segment. „Höhe ausrichten" bringt Punkt 1 (Startpaar ▶) '
+      + 'von INNEN und AUSSEN auf die Höhe des höheren der beiden Punkte. Der Regler verschiebt nur das Innenprofil in X.');
+    const bAl = document.createElement('button'); bAl.textContent = T('Höhe ausrichten');
+    bAl.onclick = () => { const m = dxfAlignHeight(); toast(m); dxfResolve(); App.buildSidebar(); renderDxf(); App.render(); };
+    ka.body.appendChild(bAl);
+    d.innerOff = d.innerOff || { x: 0, y: 0 };
+    App.numRow(ka.body, 'INNENprofil verschieben X (mm)', () => d.innerOff.x,
+      v => { d.innerOff.x = v; dxfResolve(); renderDxf(); App.render(); },
+      { step: 0.1, norender: true, enter: true, hint: 'Nur INNEN wird in X verschoben (positiv = nach rechts); AUSSEN bleibt stehen. Zahl eingeben oder mit ▲▼ in 0,1-mm-Schritten.' });
+    const bAx = document.createElement('button'); bAx.textContent = T('X-Verschiebung INNEN auf 0');
+    bAx.onclick = () => { dxfPushUndo(); d.innerOff.x = 0; dxfResolve(); App.buildSidebar(); renderDxf(); App.render(); };
+    ka.body.appendChild(bAx);
+    side.appendChild(ka.g);
+
     const op = App.grp('Schnitt', true, 'dxf');
     App.selectRow(op.body, 'Umlaufrichtung', [['1', 'Vorwärts (wie gesetzt)'], ['-1', 'Rückwärts']],
       () => String(d.dir), v => { d.dir = parseInt(v, 10); renderDxf(); App.render(); },
@@ -2326,6 +2342,30 @@
     try { renderDxfMain(); App.renderDxfPlan(); } finally { App.matCtxOverride = null; }
     if (App.renderSeg3DWin) App.renderSeg3DWin();   // offenes 3D-Fenster mitziehen
   }
+  // Punkt 1 (Startpaar ▶) von INNEN/AUSSEN des aktiven Segments (inkl. Verschiebung) oder null.
+  function dxfStartPts(d) {
+    d = d || state.dxf;
+    if (!d.inner || !d.outer) return null;
+    let i, j;
+    if (d.sync && d.sync.length) { const sy = d.sync[d.start] || d.sync[0]; i = sy.i; j = sy.j; }
+    else if (dxfSameSection()) { i = 0; j = 0; }
+    else return null;
+    const a = d.inner[i], b = d.outer[j];
+    return a && b ? { a, b } : null;
+  }
+  // Höhe ausrichten: der tiefer liegende Punkt 1 wird auf die Höhe des höheren gebracht
+  // (die ganze Form wird in Y verschoben). Rückgabe: Text für die Meldung.
+  function dxfAlignHeight() {
+    const d = state.dxf, sp = dxfStartPts(d);
+    if (!sp) return T('Erst INNEN und AUSSEN zuordnen und Synchronpunkte setzen (Punkt 1 fehlt).');
+    const dy = sp.a.y - sp.b.y;
+    if (Math.abs(dy) < 1e-9) return T('Punkt 1 liegt schon auf gleicher Höhe.');
+    dxfPushUndo();
+    d.innerOff = d.innerOff || { x: 0, y: 0 }; d.outerOff = d.outerOff || { x: 0, y: 0 };
+    if (dy > 0) { d.outerOff.y += dy; return T('AUSSEN um ') + dy.toFixed(2) + T(' mm angehoben.'); }
+    d.innerOff.y += -dy; return T('INNEN um ') + (-dy).toFixed(2) + T(' mm angehoben.');
+  }
+  App.dxfStartPts = dxfStartPts;
   function renderDxfMain() {
     applyView('dxf');   // DXF-Formen-Ansicht nutzt eigene Zeichnungsfarben
     const cv = document.getElementById('cDxf'); if (!cv) return;
@@ -2520,6 +2560,28 @@
         ctx.stroke();
       }
       App.dxfDraw = { V };
+      // Maß der Ausrichtung (Komplexe Form ausrichten): INNEN-Verschiebung X und Höhendifferenz Punkt 1.
+      if (d.inner && d.outer) {
+        const ix = (d.innerOff && d.innerOff.x) || 0, sp = dxfStartPts(d);
+        const sg = v => (v > 0 ? '+' : '') + v.toFixed(1);
+        const lines = [T('INNEN verschoben X: ') + sg(ix) + ' mm'];
+        if (sp) lines.push(T('Höhe Punkt 1: INNEN ') + sp.a.y.toFixed(2) + T(' · AUSSEN ') + sp.b.y.toFixed(2) + T(' · Δ ') + (sp.a.y - sp.b.y).toFixed(2) + ' mm');
+        ctx.save(); ctx.font = '12px system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+        const tw = Math.max.apply(null, lines.map(t => ctx.measureText(t).width)) + 16, th = lines.length * 16 + 8;
+        const bx0 = 10, by0 = h - th - 10;
+        ctx.fillStyle = 'rgba(20,26,34,.72)'; ctx.fillRect(bx0, by0, tw, th);
+        ctx.fillStyle = App.PAL.profInner || '#fff';
+        lines.forEach((t, n) => ctx.fillText(t, bx0 + 8, by0 + 18 + n * 16));
+        ctx.restore();
+        // Kurze Maßlinie des X-Versatzes am Startpunkt von INNEN
+        if (sp && Math.abs(ix) > 1e-9) {
+          const y0 = V.Y(sp.a.y), x1 = V.X(sp.a.x), x0 = V.X(sp.a.x - ix);
+          ctx.save(); ctx.strokeStyle = App.PAL.profInner || '#fff'; ctx.lineWidth = 1; ctx.setLineDash([4, 3]);
+          ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y0); ctx.stroke(); ctx.setLineDash([]);
+          ctx.font = '11px system-ui'; ctx.fillStyle = App.PAL.profInner || '#fff'; ctx.textAlign = 'center';
+          ctx.fillText(sg(ix) + ' mm', (x0 + x1) / 2, y0 - 5); ctx.restore();
+        }
+      }
     }
     if (info) {
       if (ed.on) info.innerHTML =

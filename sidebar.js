@@ -4,6 +4,7 @@
 (function () {
   'use strict';
   const App = (window.App = window.App || {});
+  App.dxfEndHook = true;   // meldet nasenleiste.js: das Menü „DXF Export" wird am Ende der Seitenleiste eingehängt
   const { T, Ttitle, anchorDownload, buildCadSidebar, buildDxfExportSidebar, buildDxfSidebar, buildRibSidebar, closeSweepCmp, dim, dtThinReport } = App;
   const { isPlaceholderProfile, loadDat, loadFlz, loadFoilDats, loadPc2, loadProfileDxf, loadXflr } = App;
   const { openSweepCmp, parseNum, pocketDepth, render, renderDxf, renderMaterial, renderNeg, saveSettings } = App;
@@ -1286,6 +1287,8 @@
       () => state.cfg.leStyle, v => { state.cfg.leStyle = v; buildSidebar(); },
       'X-Schlaufe: schräg unter Winkel runter, parallel vor, senkrecht hoch, gespiegelt zurück zur Nase. '
       + 'Liegende Acht: ∞-Schlaufe vor der Nase, tangential in Ober- und Unterseite übergehend.');
+    if (App.noseBarOn && App.noseBarOn() && !state.cfg.sparOnly)
+      hint(body, '⚠ Nasenausschnitt aktiv: Diese Auswahl wird ignoriert — es gilt fest „Horizontal nach vorne“ (Länge wie eingestellt).');
     if (state.cfg.leStyle === 'x') {
       numRow(body, 'Winkel zur Mittellinie (°)', () => state.cfg.leAngle, v => state.cfg.leAngle = v, { step: 1, min: 1, max: 89 });
       numRow(body, 'Abstand horizontale Linien (mm)', () => state.cfg.leGap, v => state.cfg.leGap = Math.max(0, v),
@@ -2503,6 +2506,55 @@
     numRow(mdb.body, 'Abbrand (mm)', () => App.kerfPair(state.material.id).fast.toFixed(2),
       v => { App.setKerf('fast', v); renderMaterial(); render(); }, { step: 0.05, min: 0 });
 
+    // --- Kalibrier-Assistent: Testrechteck nachmessen -> Abbrand berechnen -> übernehmen ---
+    {
+      const mid = state.material.id, cb = state.calib;
+      if (!state.material.meas) state.material.meas = {};
+      if (!state.material.meas[mid]) state.material.meas[mid] = {};
+      const M = pt => state.material.meas[mid][pt] || (state.material.meas[mid][pt] = { l: 0, h: 0 });
+      subhead(mdb.body, 'Kalibrier-Assistent (Testrechteck messen)');
+      hint(mdb.body, '1) Im Reiter „Schneiden" → Abbrand-Kalibrierung ein Testrechteck OHNE Abbrand-Kompensation schneiden '
+        + '(Vorschub/Heizstrom des Stützpunkts). 2) Ausgeschnittenes Teil mit dem Messschieber messen und hier eintragen. '
+        + '3) Der Abbrand ergibt sich aus Soll − Ist und wird mit „Übernehmen" in den Stützpunkt geschrieben.');
+      numRow(mdb.body, 'Soll Länge (mm)', () => cb.len, v => { cb.len = Math.max(1, v); renderMaterial(); }, { min: 1, norender: true });
+      numRow(mdb.body, 'Soll Höhe (mm)', () => cb.hgt, v => { cb.hgt = Math.max(1, v); renderMaterial(); }, { min: 1, norender: true });
+      if (cb.withKerf) {
+        const w = document.createElement('div'); w.className = 'hint'; w.style.cssText = 'color:var(--bad);font-weight:600;margin:4px 0';
+        w.textContent = T('⚠ Im Reiter „Schneiden" ist „mit Abbrand-Kompensation" an — das Testteil muss OHNE Kompensation geschnitten sein.');
+        mdb.body.appendChild(w);
+      }
+      [['slow', 'langsam'], ['fast', 'schnell']].forEach(([pt, nm]) => {
+        subhead(mdb.body, 'Messung ' + nm);
+        const out = document.createElement('div'); out.className = 'hint'; out.style.margin = '2px 0 6px';
+        const calc = () => {
+          const m = M(pt);
+          if (!(m.l > 0) || !(m.h > 0)) return null;
+          const kl = cb.len - m.l, kh = cb.hgt - m.h;
+          return { kl, kh, k: (kl + kh) / 2 };
+        };
+        const upd = () => {
+          const r = calc();
+          if (!r) { out.textContent = T('Gemessene Länge und Höhe eintragen.'); out.style.color = ''; return; }
+          const ok = r.k >= 0 && r.k < 3;
+          out.textContent = T('Abbrand aus Länge: ') + r.kl.toFixed(2) + T(' · aus Höhe: ') + r.kh.toFixed(2)
+            + T(' → Mittel ') + r.k.toFixed(2) + ' mm'
+            + (!ok ? T('  ⚠ unplausibel (Maße prüfen)') : (Math.abs(r.kl - r.kh) > 0.3 ? T('  ⚠ Länge/Höhe weichen stark ab (Drahtdurchhang/Schräglage?)') : ''));
+          out.style.color = ok ? '' : 'var(--bad)';
+        };
+        numRow(mdb.body, 'Gemessene Länge (mm)', () => M(pt).l || '', v => { M(pt).l = v; saveSettings(); upd(); }, { min: 0, step: 0.01, norender: true });
+        numRow(mdb.body, 'Gemessene Höhe (mm)', () => M(pt).h || '', v => { M(pt).h = v; saveSettings(); upd(); }, { min: 0, step: 0.01, norender: true });
+        mdb.body.appendChild(out); upd();
+        const b = document.createElement('button'); b.textContent = T('Abbrand ') + nm + T(' übernehmen');
+        b.onclick = () => {
+          const r = calc();
+          if (!r || r.k < 0) { App.toast && App.toast(T('Erst gültige Messwerte eintragen.')); return; }
+          App.setKerf(pt, Math.round(r.k * 100) / 100);
+          saveSettings(); buildSidebar(); renderMaterial(); render();
+        };
+        mdb.body.appendChild(b);
+      });
+    }
+
     // Interpolation braucht ZWEI verschiedene Vorschübe. Sind sie gleich, kann der
     // Abbrand nicht vorschubabhängig berechnet werden -> es wird gemittelt. Das ist
     // die häufigste Verwirrung („Abbrand wird nicht übernommen"), daher klar warnen.
@@ -2857,6 +2909,8 @@
     buildModelSidebar(side);            // Reiter „3D-Modell"
     buildModelGcodeSidebar(side);       // Reiter „3D-Modell" — Heißdraht-G-Code
     buildModelStlSidebar(side);         // Reiter „3D-Modell" — STL-Export (ganz unten)
+
+    if (App.dxfExportSidebar) App.dxfExportSidebar(side);   // Kerndesign: Menü „DXF Export" ganz unten (nasenleiste.js)
 
     applySidebarFilter();               // nur die zum aktiven Reiter passenden Gruppen zeigen
   }
