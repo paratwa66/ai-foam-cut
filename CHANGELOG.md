@@ -14,9 +14,16 @@
 - Gespeicherte Projekte ohne neue Statusschlüssel erzeugten keinen G-Code; robuste Initialisierung (`blockKState()`, `abplanState()`). *Old projects lacking new state keys no longer break G-code generation.*
 
 ### Added / Neu
-- **Abplanen**: Länge, Tiefe, Sicherheitsabstand, Vorschub; Draht fährt 10 mm hoch, X = Länge + Sicherheit, Heizung nach Werkstoffprofil, Schnitt mit Werkstoff-Schnittgeschwindigkeit, danach Absenken um den Abbrand und `G10 L20 P0 X0 Y0 U0 V0` als neuer Nullpunkt, Ende mit M5/M2. *Surfacing with automatic new work zero.*
+- **Abplanen**: Länge, Tiefe, Sicherheitsabstand, Vorschub; Draht fährt 10 mm hoch, X = Länge + Sicherheit, Heizung nach Werkstoffprofil, Schnitt mit Werkstoff-Schnittgeschwindigkeit, danach Absenken um den halben Abbrand und `G10 L20 P0 X0 Y0 U0 V0` als neuer Nullpunkt, Ende mit M5/M2. *Surfacing with automatic new work zero.*
 - **Blockzuschnitt komplett**: Draht fährt vorne unten ein, hoch, schneidet Oberseite nach hinten, fährt hinten nach unten, schneidet Unterseite; mit Abbrandkompensation; ohne Pause, Ausfahrt auf Nullstellung. *Full cuboid trim from front-bottom entry.*
 - **Tempo-Auswahl** der Simulation im Schneiden-Monitor (`#simMSpeed`, gekoppelt mit `#simSpeed`). *Simulation speed selector.*
 - **Kalibrier-Assistent** (Werkstoffdatenbank): Rechteck schneiden, messen, Abbrand berechnen und übernehmen (`App.setKerf`). *Kerf calibration by cutting and measuring a rectangle.*
 - **Komplexe Form ausrichten** (DXF-Formen): Startpunkte, Höhenausrichtung, Mess-Overlay. *Align complex DXF shapes.*
 - **Nasentasche**: freie Höhe/Höhenlage, Drehung in 0,1°, Teilrippen (grün gestrichelt), DXF-Export. *Nose pocket extensions.*
+
+### Korrektur nach Maschinentest / Fix after machine test
+- **Abplanen**: Nach dem Schnitt fährt der Draht nur noch um den **halben** Abbrand nach unten (vorher voller Abbrand; an der Maschine zu tief). Betrifft `gcodegen.js` (`yKerf = −Tiefe − k/2`), G-Code-Kommentar und Hinweistext im Panel. *Surfacing: the wire now moves down by half the kerf only (was full kerf, too deep on the machine).*
+
+### Teststatus / Test status (2026-11-21)
+- DE: Alle Funktionen der Paratwa Edition 1.0 wurden an einer realen Heißdraht-Maschine getestet (Nasentasche inkl. neuem Schnittablauf, Abplanen mit Nullpunkt-Setzen, Blockzuschnitt, Kalibrier-Assistent, Komplexe Form ausrichten, Simulations-Tempo). Ergebnis: in Ordnung.
+- EN: All Paratwa Edition 1.0 features were tested on a real hot-wire machine (nose pocket incl. new cut sequence, surfacing with work-zero setting, block trim, calibration assistant, complex-shape alignment, simulation speed). Result: OK.

@@ -364,7 +364,7 @@
       feedRow(zuA.body, 'Vorschub (mm/min)', () => ab.feed,
         v => { ab.feed = v; refreshCutSource('abplan'); }, { min: 1, norender: true });
       hint(zuA.body, 'Ablauf: Sicherheitsabstand hoch → in X um Länge + Sicherheitsabstand (Eilgang) → aufheizen → auf Y = −Tiefe runter → '
-        + 'mit Schnittvorschub nach vorn bis X0 → um den Abbrand nach unten → dort neuer Nullpunkt. Als G-Code-Quelle „Abplanen" im Reiter „Schneiden" wählen und übernehmen.');
+        + 'mit Schnittvorschub nach vorn bis X0 → um den halben Abbrand nach unten → dort neuer Nullpunkt. Als G-Code-Quelle „Abplanen" im Reiter „Schneiden" wählen und übernehmen.');
       side.appendChild(zuA.g);
 
       // --- Kalibrierung (Testschnitt) -----------------------------------

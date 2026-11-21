@@ -11,7 +11,7 @@ All paths relative to the app folder (Manuel's upstream state as base).
 | `dxfshapes.js` | „Komplexe Form ausrichten“ |
 | `core.js` | Standardwerte `blockK`, `abplan`, `blockKMatId`, `abplanMatId` |
 | `compute.js` | `PREP_MAT_KEYS`, Vorschub-Sync für Blockzuschnitt/Abplanen; Nasenverlängerung fest horizontal bei aktivem Nasenausschnitt |
-| `gcodegen.js` | `blockKGcode`, `abplanGcode`, robuste Status-Initialisierung |
+| `gcodegen.js` | `blockKGcode`, `abplanGcode` (halber Abbrand für neuen Nullpunkt), robuste Status-Initialisierung |
 | `gcode.js` | 3D-Szenen `buildBlockKScene`, `buildAbplanScene` |
 | `cutpanel.js` | Gruppen „Blockzuschnitt komplett“, „Abplanen“, Quellenauswahl |
 | `sim3d.js` | Simulations-Tempo |

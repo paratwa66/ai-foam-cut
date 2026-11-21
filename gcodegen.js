@@ -450,8 +450,8 @@
   }
   /* Abplanen: Styrodur-Unterlage waagrecht abfräsen (heißdrahtschneiden), damit Rillen verschwinden.
    * Ablauf: Sicherheitsabstand hoch (Eilgang) -> in X um Länge + Sicherheitsabstand (Eilgang) -> Draht aufheizen
-   * (Aufheizzeit des Werkstoffs) -> auf Y = −Tiefe runter -> mit Schnittvorschub nach vorn bis X0 -> um den Abbrand
-   * nach unten -> dort neuen Nullpunkt setzen (G10 L20). */
+   * (Aufheizzeit des Werkstoffs) -> auf Y = −Tiefe runter -> mit Schnittvorschub nach vorn bis X0 -> um den halben
+   * Abbrand nach unten -> dort neuen Nullpunkt setzen (G10 L20). */
   function abplanState() {
     const d = { len: 300, depth: 1, safe: 10, feed: 300 };
     if (!state.abplan || typeof state.abplan !== 'object') state.abplan = Object.assign({}, d);
@@ -466,14 +466,14 @@
     const pr = state.cfg.precision != null ? state.cfg.precision : 2, f = v => v.toFixed(pr);
     const feed = bp.feed || 300, k = App.kerfForSpeed(App.matIdFor('abplan'), feed);
     const L = Math.max(0, +bp.len || 0), D = Math.max(0, +bp.depth || 0), s = Math.max(0, +bp.safe || 0);
-    const xEnd = L + s, yDown = -D, yKerf = -D - k;
+    const xEnd = L + s, yDown = -D, yKerf = -D - k / 2; // nur der halbe Abbrand: Schnittfläche liegt um k/2 unter der Drahtmitte
     const sec = +state.material.preheatSec || 0;
     const out = [], em = s => out.push(window.I18N ? window.I18N.tc(s) : s);
     const g0 = (x, y, c) => em(`G0 ${ax.x}${f(x)} ${ax.y}${f(y)} ${ax.u}${f(x)} ${ax.v}${f(y)}` + (c ? ' ; ' + c : ''));
     const g1 = (x, y, F, c) => em(`G1 ${ax.x}${f(x)} ${ax.y}${f(y)} ${ax.u}${f(x)} ${ax.v}${f(y)} F${F.toFixed(0)}` + (c ? ' ; ' + c : ''));
     em('; ==== HotWing – Abplanen ====');
     em('; ' + T('Länge ') + L + T(' mm (+ ') + s + T(' mm Sicherheitsabstand) · Tiefe ') + D + T(' mm unter dem Nullpunkt · Vorschub ') + feed + ' mm/min');
-    em('; ' + T('Abbrand ') + k.toFixed(2) + T(' mm – danach um diesen Betrag nach unten und neuer Nullpunkt'));
+    em('; ' + T('Abbrand ') + k.toFixed(2) + T(' mm – danach um den halben Abbrand (') + (k / 2).toFixed(2) + T(' mm) nach unten und neuer Nullpunkt'));
     em('G21 ; mm'); em('G90 ; absolut'); em('G94 ; Vorschub in mm/min');
     em('F' + feed.toFixed(0) + ' ; Startvorschub setzen');
     em(App.matNote());
@@ -485,7 +485,7 @@
     if (sec > 0) em('G4 P' + sec + ' ; ' + T('aufheizen'));
     g1(xEnd, yDown, feed, T('runter auf Y = −Tiefe'));
     g1(0, yDown, feed, T('abplanen: mit Schnittvorschub nach vorn bis X0'));
-    g1(0, yKerf, feed, T('um den Abbrand nach unten'));
+    g1(0, yKerf, feed, T('um den halben Abbrand nach unten'));
     if (heat != null) em('M5 ; Draht AUS');
     em(`G10 L20 P0 ${ax.x}0 ${ax.y}0 ${ax.u}0 ${ax.v}0 ; ` + T('neuer Nullpunkt (Werk-Null) an dieser Position'));
     em('M2 ; Ende');

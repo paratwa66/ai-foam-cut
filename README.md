@@ -41,3 +41,7 @@ EN: Hot-wire machines and G-code are safety-relevant. Always check new features 
 
 ## See also
 - Building it yourself and publishing the exe as a release: `docs/BUILD_EN.md`
+
+## Teststatus / Test status
+DE: Getestet an einer realen Heißdraht-Maschine am 21.11.2026 (siehe CHANGELOG). Trotzdem: neue Programme immer erst im Trockenlauf prüfen.
+EN: Tested on a real hot-wire machine on 21 Nov 2026 (see CHANGELOG). Still, always dry-run new programs first.

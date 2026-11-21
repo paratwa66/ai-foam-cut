@@ -23,7 +23,7 @@ Cuts a cuboid out of the raw block: the wire enters at front-bottom, moves up, c
 ## 5. Surfacing (Cut tab)
 Levels the foam bed.
 Parameters: **length**, **depth** (negative Y), **safety distance**, **feed**.
-Sequence: wire up 10 mm → X = length + safety → heat (material profile) + preheat dwell → down by depth → cut back to X0 at the material's cutting speed → down by the kerf → heat off → **new work zero** (`G10 L20 P0 X0 Y0 U0 V0`).
+Sequence: wire up 10 mm → X = length + safety → heat (material profile) + preheat dwell → down by depth → cut back to X0 at the material's cutting speed → down by **half** the kerf (the cut face lies k/2 below the wire centre) → heat off → **new work zero** (`G10 L20 P0 X0 Y0 U0 V0`).
 ⚠ Test the work-zero setting carefully on your machine first.
 
 ## 6. Simulation speed

@@ -23,7 +23,7 @@ Schneidet aus dem Rohblock einen Quader: Draht fährt vorne unten ein, nach oben
 ## 5. Abplanen (Tab Schneiden)
 Plant die Styrodur-Unterlage ab.
 Parameter: **Länge**, **Tiefe** (negatives Y), **Sicherheitsabstand**, **Vorschub**.
-Ablauf: Draht 10 mm hoch → X = Länge + Sicherheit → Heizung (Werkstoffprofil) + Vorheizzeit → Absenken um Tiefe → Schnitt mit Werkstoff-Schnittgeschwindigkeit zurück zu X0 → Absenken um den Abbrand → Heizung aus → **neuer Nullpunkt** (`G10 L20 P0 X0 Y0 U0 V0`).
+Ablauf: Draht 10 mm hoch → X = Länge + Sicherheit → Heizung (Werkstoffprofil) + Vorheizzeit → Absenken um Tiefe → Schnitt mit Werkstoff-Schnittgeschwindigkeit zurück zu X0 → Absenken um den **halben** Abbrand (Schnittfläche liegt um k/2 unter der Drahtmitte) → Heizung aus → **neuer Nullpunkt** (`G10 L20 P0 X0 Y0 U0 V0`).
 ⚠ Das Nullpunkt-Setzen an der Maschine zuerst mit Vorsicht testen.
 
 ## 6. Simulations-Tempo
