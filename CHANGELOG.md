@@ -24,6 +24,10 @@
 ### Korrektur nach Maschinentest / Fix after machine test
 - **Abplanen**: Nach dem Schnitt fährt der Draht nur noch um den **halben** Abbrand nach unten (vorher voller Abbrand; an der Maschine zu tief). Betrifft `gcodegen.js` (`yKerf = −Tiefe − k/2`), G-Code-Kommentar und Hinweistext im Panel. *Surfacing: the wire now moves down by half the kerf only (was full kerf, too deep on the machine).*
 
+### Umfang dieser Version / Scope of this edition
+- DE: Die Paratwa Edition umfasst nicht den vollen Funktionsumfang von AI Foam Cut. Sie enthält die Funktionen und Werkzeuge, die ich für das Styroporschneiden mit dem Heißdraht benötige, einschließlich der oben beschriebenen Änderungen. Weitere Funktionen des Originals von Manuel Heinisch (z. B. Formenbau, Fräsen, Rippenbauweise) habe ich beim Bauen der EXE bewusst nicht aufgenommen. Den vollen Funktionsumfang bietet das Original: https://github.com/aifoamcut/ai-foam-cut
+- EN: The Paratwa Edition does not include the full feature set of AI Foam Cut. It contains the functions and tools I need for hot-wire foam cutting, including the modifications described above. Further features of the original by Manuel Heinisch (e.g. mould making, milling, rib construction) were deliberately left out when building the EXE. The full feature set is available in the original: https://github.com/aifoamcut/ai-foam-cut
+
 ### Teststatus / Test status (2026-11-21)
 - DE: Alle Funktionen der Paratwa Edition 1.0 wurden an einer realen Heißdraht-Maschine getestet (Nasentasche inkl. neuem Schnittablauf, Abplanen mit Nullpunkt-Setzen, Blockzuschnitt, Kalibrier-Assistent, Komplexe Form ausrichten, Simulations-Tempo). Ergebnis: in Ordnung.
 - EN: All Paratwa Edition 1.0 features were tested on a real hot-wire machine (nose pocket incl. new cut sequence, surfacing with work-zero setting, block trim, calibration assistant, complex-shape alignment, simulation speed). Result: OK.

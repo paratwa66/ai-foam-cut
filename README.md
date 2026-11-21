@@ -45,3 +45,7 @@ EN: Hot-wire machines and G-code are safety-relevant. Always check new features 
 ## Teststatus / Test status
 DE: Getestet an einer realen Heißdraht-Maschine am 21.11.2026 (siehe CHANGELOG). Trotzdem: neue Programme immer erst im Trockenlauf prüfen.
 EN: Tested on a real hot-wire machine on 21 Nov 2026 (see CHANGELOG). Still, always dry-run new programs first.
+
+## Umfang / Scope
+DE: Diese Edition enthält nur die für das Heißdraht-Styroporschneiden relevanten Funktionen, nicht den vollen Umfang des Originals (siehe CHANGELOG).
+EN: This edition contains only the functions relevant to hot-wire foam cutting, not the full feature set of the original (see CHANGELOG).
