@@ -257,7 +257,7 @@
     em(App.matNote());
     const heat = App.currentHeat();
     // Draht nur einschalten, wenn er schon beim Rauffahren heiß sein soll.
-    if (heat != null && upHeat) em('M3 S' + App.currentWireS() + ' ; Draht EIN (rauffahren, ' + (+heat).toFixed(0) + ' %)');
+    if (heat != null && upHeat) em('M3 S' + App.currentWireS() + ' ; ' + T('Draht EIN (rauffahren, ') + (+heat).toFixed(0) + ' %)');
     g0(0, 0, 'Start am Maschinennullpunkt (X0/Y0)');
     // Positionieren mit Versatz: immer Eilgang/Max-Vorschub, Draht aus.
     const gPos = (x, y, c) => rapid > 0 ? g1(x, y, rapid, c) : g0(x, y, c);
@@ -273,7 +273,7 @@
     em('M0 ; AUTO-PAUSE: auf Höhe erreicht. Im Reiter „Schneiden" auf „Fortsetzen" drücken');
     // Nach Fortsetzen: Heizung EIN und aufheizen — direkt vor dem Abwärtsschnitt.
     // Aufheizzeit nach der Pause (Draht war aus) fügt applyPauseReheat ein.
-    if (heat != null) em('M3 S' + App.currentWireS() + ' ; Draht EIN (nach Fortsetzen, ' + (+heat).toFixed(0) + ' %)');
+    if (heat != null) em('M3 S' + App.currentWireS() + ' ; ' + T('Draht EIN (nach Fortsetzen, ') + (+heat).toFixed(0) + ' %)');
     g1(xBot, 0, feed, T('runter auf Y0 (Winkel ') + gp.angle + '°)');
     if (over > 0) g1(xEnd, yEnd, feed, T('Überfahrt unter Y0 (sicher durchschneiden, bis Y ') + (-over) + ' mm)');
     const dwl = +state.material.meltDwell || 0;
@@ -335,7 +335,7 @@
     em('F' + feed.toFixed(0) + ' ; Startvorschub setzen');
     em(App.matNote());
     const heat = App.currentHeat();
-    const wireOn = () => { if (heat != null) em('M3 S' + App.currentWireS() + ' ; Draht EIN (' + (+heat).toFixed(0) + ' %)'); };
+    const wireOn = () => { if (heat != null) em('M3 S' + App.currentWireS() + ' ; ' + T('Draht EIN (') + (+heat).toFixed(0) + ' %)'); };
     // Ablauf-Wahl nur bei „Auf Höhe ablängen": rapidCut = Eilgang über die Oberkante
     // hin, Schnitt zurück; cutRapid = Schnitt hin, Eilgang im Spalt zurück (Standard);
     // cutCut = Schnitt hin und zurück. „Ober-/Unterseite" hat einen festen Ablauf.
@@ -433,7 +433,7 @@
     em('F' + feed.toFixed(0) + ' ; Startvorschub setzen');
     em(App.matNote());
     const heat = App.currentHeat();
-    if (heat != null) em('M3 S' + App.currentWireS() + ' ; Draht EIN (' + (+heat).toFixed(0) + ' %)');
+    if (heat != null) em('M3 S' + App.currentWireS() + ' ; ' + T('Draht EIN (') + (+heat).toFixed(0) + ' %)');
     g0(0, 0, 'Start am Maschinennullpunkt (X0/Y0)');
     g0(0, yb, 'hoch auf untere Schnitthöhe (vor dem Block)');
     g1(x0, yb, feed, T('vorne unten einfahren'));
@@ -481,7 +481,7 @@
     g0(0, 0, 'Start am Maschinennullpunkt (X0/Y0)');
     g0(0, s, T('hoch um den Sicherheitsabstand (Eilgang)'));
     g0(xEnd, s, T('in X um Länge + Sicherheitsabstand (Eilgang)'));
-    if (heat != null) em('M3 S' + App.currentWireS() + ' ; Draht EIN (' + (+heat).toFixed(0) + ' %)');
+    if (heat != null) em('M3 S' + App.currentWireS() + ' ; ' + T('Draht EIN (') + (+heat).toFixed(0) + ' %)');
     if (sec > 0) em('G4 P' + sec + ' ; ' + T('aufheizen'));
     g1(xEnd, yDown, feed, T('runter auf Y = −Tiefe'));
     g1(0, yDown, feed, T('abplanen: mit Schnittvorschub nach vorn bis X0'));
@@ -528,7 +528,7 @@
     em('; Ablauf je Viereck: horizontale Anfahrt von X0 (Nullpunkt) → oben → rechts runter → unten → links hoch (schließen) → zurück auf X0 → vertikal zum nächsten.');
     em('; Nach dem Schnitt Ist-Maße messen: Abbrand = Nennmaß − Istmaß (ohne Komp.).');
     em('G21 ; mm'); em('G90 ; absolut');
-    if (heat != null) em('M3 S' + App.wireSFor(heat) + ' ; Draht EIN (' + (+heat).toFixed(0) + ' %)');
+    if (heat != null) em('M3 S' + App.wireSFor(heat) + ' ; ' + T('Draht EIN (') + (+heat).toFixed(0) + ' %)');
     g0(0, 0, 'Start am Maschinennullpunkt');
     g0(0, safeY, 'hoch auf Sicherheitshöhe');
     g0(0, rects[0].yTop, 'auf Höhe des obersten Vierecks (am Nullpunkt X0)');

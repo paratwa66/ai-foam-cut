@@ -24,6 +24,12 @@
 ### Korrektur nach Maschinentest / Fix after machine test
 - **Abplanen**: Nach dem Schnitt fährt der Draht nur noch um den **halben** Abbrand nach unten (vorher voller Abbrand; an der Maschine zu tief). Betrifft `gcodegen.js` (`yKerf = −Tiefe − k/2`), G-Code-Kommentar und Hinweistext im Panel. *Surfacing: the wire now moves down by half the kerf only (was full kerf, too deep on the machine).*
 
+### Steuerungs-Einstellungen sichern / Back up controller settings
+- **grblHAL-/Mega-5X-Einstellungsfenster ($$)**: Neue Knöpfe **„Sichern…“** (schreibt alle `$n=Wert` in eine Textdatei) und **„Laden…“** (liest eine Sicherung in die Tabelle ein; Abweichungen orange markiert, gesendet wird erst mit „Änderungen speichern“) (`grbl.js`). *New "Back up…" / "Load…" buttons in the controller settings window: save all `$n=value` to a text file, and read a backup into the table (differences marked orange, sent only with "Save changes").*
+
+### Englisch / English
+- **Englische Übersetzung** aller neuen Texte (Oberfläche, Hinweise, G-Code-Kommentare) in `i18n.js`; G-Code-Kommentare „Draht EIN (…)“ werden nun fragmentweise übersetzt (`gcodegen.js`). Zusätzlich gibt es eine **englische exe-Variante** mit Englisch als Startsprache (`englische_exe/`). *English translations for all new texts (UI, hints, G-code comments) in `i18n.js`, plus an English-default build variant.*
+
 ### Umfang dieser Version / Scope of this edition
 - DE: Die Paratwa Edition umfasst nicht den vollen Funktionsumfang von AI Foam Cut. Sie enthält die Funktionen und Werkzeuge, die ich für das Styroporschneiden mit dem Heißdraht benötige, einschließlich der oben beschriebenen Änderungen. Weitere Funktionen des Originals von Manuel Heinisch (z. B. Formenbau, Fräsen, Rippenbauweise) habe ich beim Bauen der EXE bewusst nicht aufgenommen. Den vollen Funktionsumfang bietet das Original: https://github.com/aifoamcut/ai-foam-cut
 - EN: The Paratwa Edition does not include the full feature set of AI Foam Cut. It contains the functions and tools I need for hot-wire foam cutting, including the modifications described above. Further features of the original by Manuel Heinisch (e.g. mould making, milling, rib construction) were deliberately left out when building the EXE. The full feature set is available in the original: https://github.com/aifoamcut/ai-foam-cut

@@ -1521,6 +1521,57 @@
     $('#grblSettings').addEventListener('click', e => { if (e.target.id === 'grblSettings') closeSettings(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSettings(); });
     $('#setReload').onclick = loadSettings;
+
+    // Sichern / Laden der $-Einstellungen als Textdatei (Paratwa Edition).
+    // Sichern: alle aktuell angezeigten $n=Wert-Zeilen. Laden: Werte werden nur in
+    // die Tabelle übernommen (orange = geändert) und erst mit „Änderungen speichern“
+    // an die Steuerung gesendet — so kann vorher alles geprüft werden.
+    (function () {
+      const reload = $('#setReload'); if (!reload || $('#setBackup')) return;
+      const mk = (id, txt, tip) => { const b = document.createElement('button'); b.id = id; b.textContent = T(txt); b.title = T(tip); return b; };
+      const bSave = mk('setBackup', 'Sichern…', 'Alle $-Einstellungen der Steuerung als Textdatei sichern.');
+      const bLoad = mk('setRestore', 'Laden…', 'Gesicherte $-Einstellungen aus einer Textdatei in die Tabelle laden (wird erst mit „Änderungen speichern“ an die Steuerung gesendet).');
+      reload.after(bSave, bLoad);
+      const status = t => { const el = $('#setStatus'); if (el) el.textContent = t; };
+      const nums = () => Object.keys(setMap).map(Number).filter(n => !isNaN(n)).sort((a, b) => a - b);
+      bSave.onclick = async () => {
+        if (!Object.keys(setMap).length) {
+          if (!grbl.connected) { alert(T('Erst mit der Maschine verbinden.')); return; }
+          await loadSettings();
+        }
+        const ks = nums(); if (!ks.length) { status(T('Keine Einstellungen zum Sichern.')); return; }
+        const d = new Date(), pad = n => String(n).padStart(2, '0');
+        const stamp = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+        const lines = ['; AI Foam Cut - ' + fw().name + ' settings backup', '; ' + stamp + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()),
+          '; Format: $number=value (one line per setting)'];
+        ks.forEach(n => lines.push('$' + n + '=' + String(setMap[n].orig).trim()));
+        const blob = new Blob([lines.join('\r\n') + '\r\n'], { type: 'text/plain' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = fw().name.replace(/\s+/g, '') + '-settings-' + stamp + '.txt'; document.body.appendChild(a); a.click();
+        setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+        status(ks.length + T(' Einstellungen gesichert (') + a.download + ').');
+      };
+      bLoad.onclick = () => {
+        if (!Object.keys(setMap).length) { alert(T('Erst verbinden und die Einstellungen laden („Neu laden“) — danach kann eine Sicherung eingelesen werden.')); return; }
+        const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.txt,.nc,.cfg,.settings,text/plain';
+        inp.onchange = () => {
+          const f = inp.files && inp.files[0]; if (!f) return;
+          const rd = new FileReader();
+          rd.onload = () => {
+            let same = 0, diff = 0, unknown = 0;
+            String(rd.result).split(/\r?\n/).forEach(l => {
+              const m = l.trim().match(/^\$(\d+)\s*=\s*(.*?)\s*(?:;.*)?$/); if (!m) return;
+              const e = setMap[m[1]]; if (!e) { unknown++; return; }
+              e.inp.value = m[2]; const dirty = m[2] !== String(e.orig).trim();
+              e.tr.classList.toggle('dirty', dirty); dirty ? diff++ : same++;
+            });
+            status(diff + T(' Werte weichen ab (orange markiert) · ') + same + T(' unverändert · ') + unknown + T(' unbekannt. Prüfen, dann „Änderungen speichern“.'));
+          };
+          rd.readAsText(f);
+        };
+        inp.click();
+      };
+    })();
     $('#setSearch').addEventListener('input', filterRows);
     $('#setSave').onclick = async () => {
       if (!grbl.connected) { alert(T('Nicht verbunden.')); return; }
